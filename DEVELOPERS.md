@@ -87,6 +87,26 @@ artifacts.
 * `docs/` — A directory that contains a standalone version of the docs
   (same as served in `docs.angularjs.org`).
 
+
+#### Docker Based Build
+
+To build AngularJS using docker, same process as regular build but can run:
+
+```shell
+# Clone your Github repository:
+git clone https://github.com/<github username>/angular.js.git
+
+# Go to the AngularJS directory:
+cd angular.js
+
+# Run docker (>= v23) build
+docker build --target artifact --output type=local,dest=. .
+
+# Run docker (< v23) build
+# DOCKER_BUILDKIT=1 docker build --target artifact --output type=local,dest=. .
+```
+
+
 ### <a name="local-server"></a> Running a Local Development Web Server
 
 To debug code, run end-to-end tests, and serve the docs, it is often useful to have a local

@@ -2099,7 +2099,7 @@ function assertArgDefined(args, index, name) {
 }
 
 function stripQueryAndHash(url) {
-  return url.replace(/[?#].*$/, '');
+  return url.replace(/^([^?#]*)[?#].*$/, '$1');
 }
 
 function MockHttpExpectation(expectedMethod, expectedUrl, expectedData, expectedHeaders,
