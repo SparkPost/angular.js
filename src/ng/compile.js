@@ -2099,7 +2099,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       // first check if there are spaces because it's not the same pattern
       var trimmedSrcset = trim(value);
       //                (   999x   ,|   999w   ,|   ,|,   )
-      var srcPattern = /(\s+\d+x\s*,|\s+\d+w\s*,|\s+,|,\s+)/;
+      var srcPattern = /(\s+(?:\d+(?:x\s*|w\s*))?,\s*|,\s+)/;
       var pattern = /\s/.test(trimmedSrcset) ? srcPattern : /(,)/;
 
       // split srcset into tuple of uri and descriptor except for the last item
@@ -2647,7 +2647,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           sibling.parentNode.removeChild(sibling);
         }
         if (notLiveList && sibling === nodeList[idx + 1]) {
-          nodeList.splice(idx + 1, 1);
+          splice.call(nodeList, idx + 1, 1);
         }
       }
     }
@@ -2794,7 +2794,10 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           }
           break;
         case NODE_TYPE_TEXT: /* Text Node */
-          addTextInterpolateDirective(directives, node.nodeValue);
+          // Don't interpolate `<textarea>` contents in IE due to security considerations.
+          if (!msie || !node.parentNode || nodeName_(node.parentNode) !== 'textarea') {
+            addTextInterpolateDirective(directives, node.nodeValue);
+          }
           break;
         case NODE_TYPE_COMMENT: /* Comment */
           if (!commentDirectivesEnabled) break;
@@ -3302,11 +3305,18 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           var controller = elementControllers[name];
           var bindings = controllerDirective.$$bindings.bindToController;
 
-          controller.instance = controller();
-          $element.data('$' + controllerDirective.name + 'Controller', controller.instance);
-          controller.bindingInfo =
-            initializeDirectiveBindings(controllerScope, attrs, controller.instance, bindings, controllerDirective);
+          var customBindingAssignment = isFunction(compile.$$customAssignBindings) &&
+            compile.$$customAssignBindings(
+                bindings, controller, controllerDirective, controllerScope, $element, attrs,
+                initializeDirectiveBindings);
+
+          if (!customBindingAssignment) {
+            controller.instance = controller();
+            $element.data('$' + controllerDirective.name + 'Controller', controller.instance);
+            controller.bindingInfo =
+              initializeDirectiveBindings(controllerScope, attrs, controller.instance, bindings, controllerDirective);
           }
+        }
 
         // Bind the required controllers to the controller, if `require` is an object and `bindToController` is truthy
         forEach(controllerDirectives, function(controllerDirective, name) {

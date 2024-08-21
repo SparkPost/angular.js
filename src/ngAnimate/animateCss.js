@@ -335,9 +335,6 @@ var $AnimateCssProvider = ['$animateProvider', /** @this */ function($animatePro
 
       if (!timings) {
         timings = computeCssStyles($window, node, properties);
-        if (timings.animationIterationCount === 'infinite') {
-          timings.animationIterationCount = 1;
-        }
       }
 
       // if a css animation has no duration we

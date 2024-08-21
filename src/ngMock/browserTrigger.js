@@ -153,7 +153,41 @@
         );
       }
 
-    } else {
+    } else if (/^focus(?:in|out)?$|^blur$/.test(eventType)) {
+      try {
+        evnt = new window.FocusEvent(eventType, {
+          bubbles: eventData.bubbles,
+          cancelable: eventData.cancelable,
+          relatedTarget: relatedTarget
+        });
+      } catch (e) {
+        // Support: IE9-11+
+        // We should use `FocusEvent` here, but there's no legacy initialization method
+        // allowing to set `relatedTarget` and if we create a `FocusEvent`, `relatedTarget`
+        // becomes read-only. Therefore, use the generic `Events` and set the property
+        // manually.
+        evnt = window.document.createEvent('Events');
+        evnt.initEvent(eventType, eventData.bubbles, eventData.cancelable);
+        evnt.relatedTarget = relatedTarget;
+      }
+
+      // Support: IE 9-11 only
+      // jQuery >=3.7.0 simulates `focus` in IE via `focusin` and `blur` via `focusout`
+      // as `focus` & `blur` are asynchronous in IE and `focusin`/`focusout` -
+      // synchronous. All those events are synchronous in other browsers. This
+      // simulation makes some tests fail if they dispatch `focus` without dispatching
+      // `focusin` or `blur` without `focusout`. To simulate native IE behavior better,
+      // trigger the bubbling surrogate earlier. (Note that in all modern browsers
+      // the bubbling surrogates are fired after the non-bubbling ones which is
+      // a spec violation)
+      if (eventType === 'focus' && window.document.documentMode) {
+        browserTrigger(element, 'focusin', eventData);
+      }
+      if (eventType === 'blur' && window.document.documentMode) {
+        browserTrigger(element, 'focusout', eventData);
+      }
+
+     } else {
       evnt = window.document.createEvent('MouseEvents');
       x = x || 0;
       y = y || 0;
@@ -165,8 +199,6 @@
      * is only here to allow for testing where the timeStamp value is
      * read */
     evnt.$manualTimeStamp = eventData.timeStamp;
-
-    if (!evnt) return;
 
     if (!eventData.bubbles || supportsEventBubblingInDetachedTree() || isAttachedToDocument(element)) {
       return element.dispatchEvent(evnt);
